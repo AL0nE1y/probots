@@ -6,23 +6,13 @@
 #include <sdktools>
 #include <cstrike>
 
-char g_saGrenadeWeaponNames[][] = {
-    "weapon_flashbang",
-    "weapon_molotov",
-    "weapon_smokegrenade",
-    "weapon_hegrenade",
-    "weapon_decoy",
-    "weapon_incgrenade"
-};
-
-int g_iaGrenadeOffsets[sizeof(g_saGrenadeWeaponNames)];
-
 bool g_bFlashed[MAXPLAYERS + 1] = false;
 bool g_bFreezetimeEnd = false;
 ConVar g_cvPredictionConVars[1] = {null};
 ConVar g_cvFFA;
+ConVar g_cvDifficulty;
 ConVar g_cvAimBotEnable;
- 
+
 public Plugin myinfo =
 {
 };
@@ -36,7 +26,8 @@ public void OnPluginStart()
 	
 	g_cvPredictionConVars[0] = FindConVar("weapon_recoil_scale");
 	g_cvFFA = FindConVar("mp_teammates_are_enemies");
-	g_cvAimBotEnable = CreateConVar("bot_aimlock", "1", "1 = Enable Bot Aimlock , 0 = Disable Bot Aimlock", _, true, 0.0, true, 1.0);
+	g_cvDifficulty = FindConVar("bot_difficulty");
+	g_cvAimBotEnable = CreateConVar("bot_aimlock", "1", "1 = Enable Bot Aimlock , 0 = Disable Bot Aimlock", _, true, 0.0, true, 2.0);
 }
 
 public void OnMapStart()
@@ -58,41 +49,27 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 {
 	if(IsValidClient(client) && IsFakeClient(client))
 	{	
-		if(GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY) != -1)
+		if(!g_bFreezetimeEnd && GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY) != -1 && !((StrEqual(weapon,"molotov") || StrEqual(weapon,"incgrenade") || StrEqual(weapon,"decoy") || StrEqual(weapon,"flashbang") || StrEqual(weapon,"hegrenade") || StrEqual(weapon,"smokegrenade"))))
 		{
-			SetEntProp(client, Prop_Send, "m_bInBuyZone", 0);
-			return Plugin_Continue;
+			return Plugin_Handled;
 		}
-	
+		
 		int m_iAccount = GetEntProp(client, Prop_Send, "m_iAccount");
+		
 		if(StrEqual(weapon,"m4a1"))
-		{ 
-			int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
-			
-			if ((GetRandomInt(1,100) <= 40) && (m_iAccount >= 2900))
+		{
+			if ((GetRandomInt(1,100) <= 30)  && (m_iAccount >= 2900))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 2900);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_m4a1_silencer");
 				
-				m_iAccount -= 2900;
-				GivePlayerItem(client, "weapon_m4a1_silencer");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
-			else if ((GetRandomInt(1,100) <= 20) && (m_iAccount >= 3300))
+			else if ((GetRandomInt(1,100) <= 15)  && (m_iAccount >= 3300))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 3300);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_aug");
 				
-				m_iAccount -= 3300;
-				GivePlayerItem(client, "weapon_aug");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
 			else
@@ -102,37 +79,21 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 		}
 		else if(StrEqual(weapon,"ak47"))
 		{
-			int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
-			
-			if ((GetRandomInt(1,100) <= 10) && (m_iAccount >= 3000))
+			if ((GetRandomInt(1,100) <= 5) && (m_iAccount >= 3000))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 3000);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_sg556");
 				
-				m_iAccount -= 3000;
-				GivePlayerItem(client, "weapon_sg556");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
 		}
 		else if(StrEqual(weapon,"mac10"))
 		{
-			int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
-			
-			if ((GetRandomInt(1,100) <= 30) && (m_iAccount >= 1800))
+			if ((GetRandomInt(1,100) <= 40) && (m_iAccount >= 1800))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 1800);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_galilar");
 				
-				m_iAccount -= 1800;
-				GivePlayerItem(client, "weapon_galilar");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
 			else
@@ -142,19 +103,11 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 		}
 		else if(StrEqual(weapon,"mp9"))
 		{
-			int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
-			
-			if ((GetRandomInt(1,100) <= 30) && (m_iAccount >= 2050))
+			if ((GetRandomInt(1,100) <= 40) && (m_iAccount >= 2050))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 2050);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_famas");
 				
-				m_iAccount -= 2050;
-				GivePlayerItem(client, "weapon_famas");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
 			else
@@ -164,19 +117,11 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 		}
 		else if(StrEqual(weapon,"mp7"))
 		{
-			int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
-			
-			if ((GetRandomInt(1,100) <= 50) && (m_iAccount >= 1500))
+			if ((GetRandomInt(1,100) <= 40) && (m_iAccount >= 1500))
 			{
-				if (iWeapon != -1)
-				{
-					FakeClientCommandEx(client, "slot1");
-					FakeClientCommandEx(client, "drop");
-				}
+				CSGO_SetMoney(client, m_iAccount - 1500);
+				CSGO_ReplaceWeapon(client, CS_SLOT_PRIMARY, "weapon_mp5sd");
 				
-				m_iAccount -= 1500;
-				GivePlayerItem(client, "weapon_mp5sd");
-				SetClientMoney(client, m_iAccount);
 				return Plugin_Handled; 
 			}
 			else
@@ -219,26 +164,26 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 				{
 					if((IsWeaponSlotActive(client, CS_SLOT_PRIMARY) && index != 40 && index != 11 && index != 38 && index != 9) || index == 63)
 					{
-						if(GetRandomInt(1,3) == 1)
+						if(GetRandomInt(1,9) == 1)
 						{
 							targetEyes[2] = targetEyes2[2];
 						}
 						else
 						{
-							targetEyes[2] = targetEyes2[2] - GetRandomFloat(10.5, 17.5);
+							targetEyes[2] = targetEyes2[2] - GetRandomFloat(30.5, 47.5);
 						}
 						
 						buttons |= IN_ATTACK;
 					}
 					else if(buttons & IN_ATTACK && IsWeaponSlotActive(client, CS_SLOT_SECONDARY) && index != 63 && index != 1)
 					{
-						if(GetRandomInt(1,3) == 1)
+						if(GetRandomInt(1,9) == 1)
 						{
 							targetEyes[2] = targetEyes2[2];
 						}
 						else
 						{
-							targetEyes[2] = targetEyes2[2] - GetRandomFloat(10.5, 17.5);
+							targetEyes[2] = targetEyes2[2] - GetRandomFloat(30.5, 47.5);
 						}
 					}
 					else if(buttons & IN_ATTACK && index == 1)
@@ -247,31 +192,27 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 					}
 					else if(buttons & IN_ATTACK && (index == 40 || index == 11 || index == 38))
 					{
-						if(GetRandomInt(1,3) == 1)
+						if(GetRandomInt(1,9) == 1)
 						{
 							targetEyes[2] = targetEyes2[2];
 						}
 						else
 						{
-							targetEyes[2] = targetEyes2[2] - GetRandomFloat(10.5, 17.5);
+							targetEyes[2] = targetEyes2[2] - GetRandomFloat(30.5, 47.5);
 						}
 					}	
 				}
 				
 				if(buttons & IN_ATTACK && IsWeaponSlotActive(client, CS_SLOT_GRENADE))
 				{
-					targetEyes[2] = targetEyes2[2] - GetRandomFloat(35.5, 45.5);
+					targetEyes[2] = targetEyes2[2] - GetRandomFloat(65.5, 95.5);
 					buttons &= ~IN_ATTACK; 
 				}
 				else if(buttons & IN_ATTACK && index == 9)
 				{
 					targetEyes[2] = targetEyes2[2] - 10.5;
 				}
-				else
-				{
-					return Plugin_Continue;
-				}
-				
+			
 				float fTargetAngles[3]; float fFinalPos[3];
 				
 				GetClientEyeAngles(Ent, fTargetAngles);
@@ -298,12 +239,12 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 					fFinalPos[0] -= vecPunchAngle[0] * GetConVarFloat(g_cvPredictionConVars[0]);
 					fFinalPos[1] -= vecPunchAngle[1] * GetConVarFloat(g_cvPredictionConVars[0]);
 				}
-				
-				TeleportEntity(client, NULL_VECTOR, fFinalPos, NULL_VECTOR);
+			
+				SmoothAim(client, fFinalPos);
 				
 				if (buttons & IN_ATTACK)
 				{
-					if(index == 7 || index == 8 || index == 10 || index == 13 || index == 14 || index == 16 || index == 39 || index == 60 || index == 28)
+					if ((index == 7 || index == 8 || index == 10 || index == 13 || index == 14 || index == 16 || index == 39 || index == 60 || index == 28) && (GetRandomInt(1,3) == 1))
 					{
 						buttons |= IN_DUCK;
 						return Plugin_Changed;
@@ -314,6 +255,19 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 	}
 
 	return Plugin_Continue;
+}
+
+public void SmoothAim(int client, float fDesiredAngles[3]) {
+	float fAngles[3], fTargetAngles[3], smoothing;
+	
+	smoothing = GetRandomFloat(0.001,0.1);
+	GetClientEyeAngles(client, fAngles);
+	
+	fTargetAngles[0] = fAngles[0] + AngleNormalize(fDesiredAngles[0] - fAngles[0]) * (1 - smoothing);
+	fTargetAngles[1] = fAngles[1] + AngleNormalize(fDesiredAngles[1] - fAngles[1]) * (1 - smoothing);
+	fTargetAngles[2] = fAngles[2];
+	
+	TeleportEntity(client, NULL_VECTOR, fTargetAngles, NULL_VECTOR);
 }
 
 public Action Timer_CheckPlayer(Handle Timer, any data)
@@ -329,11 +283,12 @@ public Action Timer_CheckPlayer(Handle Timer, any data)
 				FakeClientCommand(i, "+lookatweapon");
 				FakeClientCommand(i, "-lookatweapon");
 			}
+			
 			if ((m_iAccount >= 650) && (GetEntProp(i, Prop_Data, "m_ArmorValue") == 0))
 			{
 				SetEntProp(i, Prop_Data, "m_ArmorValue", 100, 1); 
 				m_iAccount -= 650;
-				SetClientMoney(i, m_iAccount);
+				CSGO_SetMoney(i, m_iAccount);
 			}
 		}
 	}	
@@ -381,19 +336,12 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 	
 	if (!m_bInBuyZone) return Plugin_Stop;
 	
-	int iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_SECONDARY);
 	int iPrimary = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
 	char default_primary[64];
 	GetClientWeapon(client, default_primary, sizeof(default_primary));
 
 	if (((m_iAccount >= 1100) && (m_iAccount < 3000) && iPrimary == -1 && (StrEqual(default_primary, "weapon_hkp2000") || StrEqual(default_primary, "weapon_usp_silencer") || StrEqual(default_primary, "weapon_glock")))) 
 	{
-		if (iWeapon != -1)
-				{
-					FakeClientCommand(client, "slot2");
-					FakeClientCommand(client, "drop");
-				}
-		
 		int rndpistol = GetRandomInt(1,3);
 		
 		switch(rndpistol)
@@ -403,8 +351,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 				if (m_iAccount >= 300) 
 				{
 					m_iAccount -= 300;
-					GivePlayerItem(client, "weapon_p250");
-					SetClientMoney(client, m_iAccount);
+					CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_p250");
+					CSGO_SetMoney(client, m_iAccount);
 				}
 			}
 			case 2:
@@ -419,8 +367,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 						{	if (m_iAccount >= 500) 
 							{
 								m_iAccount -= 500;
-								GivePlayerItem(client, "weapon_fiveseven");
-								SetClientMoney(client, m_iAccount);
+								CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_fiveseven");
+								CSGO_SetMoney(client, m_iAccount);
 							}
 						}
 						case 2:
@@ -428,8 +376,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 							if (m_iAccount >= 500) 
 							{
 								m_iAccount -= 500;
-								GivePlayerItem(client, "weapon_cz75a");
-								SetClientMoney(client, m_iAccount);
+								CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_cz75a");
+								CSGO_SetMoney(client, m_iAccount);
 							}
 						}
 					}
@@ -444,8 +392,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 						{	if (m_iAccount >= 500) 
 							{
 								m_iAccount -= 500;
-								GivePlayerItem(client, "weapon_tec9");
-								SetClientMoney(client, m_iAccount);
+								CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_tec9");
+								CSGO_SetMoney(client, m_iAccount);
 							}
 						}
 						case 2:
@@ -453,8 +401,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 							if (m_iAccount >= 500) 
 							{
 								m_iAccount -= 500;
-								GivePlayerItem(client, "weapon_cz75a");
-								SetClientMoney(client, m_iAccount);
+								CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_cz75a");
+								CSGO_SetMoney(client, m_iAccount);
 							}
 						}
 					}
@@ -465,8 +413,8 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 				if (m_iAccount >= 700) 
 				{
 					m_iAccount -= 700;
-					GivePlayerItem(client, "weapon_deagle");
-					SetClientMoney(client, m_iAccount);
+					CSGO_ReplaceWeapon(client, CS_SLOT_SECONDARY, "weapon_deagle");
+					CSGO_SetMoney(client, m_iAccount);
 				}
 			}
 		}
@@ -480,35 +428,11 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 			SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
 			
 			m_iAccount -= 1000;
-			SetClientMoney(client, m_iAccount);
+			CSGO_SetMoney(client, m_iAccount);
 		}
 		m_iAccount = GetEntProp(client, Prop_Send, "m_iAccount");
 		if (team == CS_TEAM_T) 
-		{ 
-			if ((m_iAccount >= 200) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[0]) == 0))
-			{
-				m_iAccount -= 200;
-				GivePlayerItem(client, "weapon_flashbang");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 300) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[2]) == 0))
-			{
-				m_iAccount -= 300;
-				GivePlayerItem(client, "weapon_smokegrenade");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 300) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[3]) == 0))
-			{
-				m_iAccount -= 300;
-				GivePlayerItem(client, "weapon_hegrenade");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 400) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[1]) == 0))
-			{
-				m_iAccount -= 400;
-				GivePlayerItem(client, "weapon_incgrenade");
-				SetClientMoney(client, m_iAccount);
-			}
+		{ 	
 		}
 		else 
 		{ 
@@ -516,131 +440,10 @@ public Action RFrame_CheckBuyZoneValue(Handle timer, int serial)
 			{
 				m_iAccount -= 400;
 				SetEntProp(client, Prop_Send, "m_bHasDefuser", 1); 
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 200) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[0]) == 0))
-			{
-				m_iAccount -= 200;
-				GivePlayerItem(client, "weapon_flashbang");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 300) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[2]) == 0))
-			{
-				m_iAccount -= 300;
-				GivePlayerItem(client, "weapon_smokegrenade");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 300) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[3]) == 0))
-			{
-				m_iAccount -= 300;
-				GivePlayerItem(client, "weapon_hegrenade");
-				SetClientMoney(client, m_iAccount);
-			}
-			if ((m_iAccount >= 600) && (GetEntProp(client, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[5]) == 0))
-			{
-				m_iAccount -= 600;
-				GivePlayerItem(client, "weapon_incgrenade");
-				SetClientMoney(client, m_iAccount);
+				CSGO_SetMoney(client, m_iAccount);
 			}
 		}
 	}
-	/*
-	m_iAccount = GetEntProp(client, Prop_Send, "m_iAccount");
-	if ((m_iAccount >= 8000 || iPrimary != -1) && (givegun[client] == false))
-	{
-		int rndrifle = GetRandomInt(1,3);
-		
-		switch(rndrifle)
-		{
-			case 1:
-			{
-				if(team == CS_TEAM_CT)
-				{
-					if (m_iAccount >= 3300) 
-							{
-								m_iAccount -= 3300;
-								GivePlayerItem(client, "weapon_aug");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-				}
-				else if(team == CS_TEAM_T)
-				{
-					if (m_iAccount >= 3000) 
-							{
-								m_iAccount -= 3000;
-								GivePlayerItem(client, "weapon_sg556");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-				}
-			}
-			case 2:
-			{
-				if(team == CS_TEAM_CT)
-				{
-					int ctrf = GetRandomInt(1,2);
-					
-					switch(ctrf)
-					{
-						case 1:
-						{	if (m_iAccount >= 3100) 
-							{
-								m_iAccount -= 3100;
-								GivePlayerItem(client, "weapon_m4a1");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-						}
-						case 2:
-						{
-							if (m_iAccount >= 2900) 
-							{
-								m_iAccount -= 2900;
-								GivePlayerItem(client, "weapon_m4a1_silencer");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-						}
-					}
-				}
-				else if(team == CS_TEAM_T)
-				{
-					if (m_iAccount >= 2700) 
-							{
-								m_iAccount -= 2700;
-								GivePlayerItem(client, "weapon_ak47");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-				}
-			}
-			case 3:
-			{
-				if(team == CS_TEAM_CT)
-				{
-					if (m_iAccount >= 2050) 
-							{
-								m_iAccount -= 2050;
-								GivePlayerItem(client, "weapon_famas");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-				}
-				else if(team == CS_TEAM_T)
-				{
-					if (m_iAccount >= 1800) 
-							{
-								m_iAccount -= 1800;
-								GivePlayerItem(client, "weapon_galilar");
-								SetClientMoney(client, m_iAccount);
-								givegun[client] = true;
-							}
-				}
-			}
-		}
-	}
-	*/
 	return Plugin_Stop;
 }
 
@@ -665,23 +468,6 @@ public Action Event_PlayerBlind(Handle event, const char[] name, bool dontBroadc
 public Action UnFlashed_Timer(Handle timer, int client)
 {
 	g_bFlashed[client] = false;
-}
-
-public void SetClientMoney(int client, int money)
-{
-	SetEntProp(client, Prop_Send, "m_iAccount", money);
-	
-	int moneyEntity = CreateEntityByName("game_money");
-	
-	DispatchKeyValue(moneyEntity, "Award Text", "");
-	
-	DispatchSpawn(moneyEntity);
-	
-	AcceptEntityInput(moneyEntity, "SetMoneyAmount 0");
-
-	AcceptEntityInput(moneyEntity, "AddMoneyPlayer", client);
-	
-	AcceptEntityInput(moneyEntity, "Kill");
 }
 
 stock void CSGO_SetMoney(int client, int amount)
@@ -739,7 +525,7 @@ stock int GetClosestClient(int client)
 	{
 		if (IsValidClient(i))
 		{
-			if (client == i || GetClientTeam(i) == clientTeam || !IsPlayerAlive(i) || g_cvFFA.IntValue == 0)
+			if (client == i || !IsPlayerAlive(i) || (g_cvFFA.IntValue == 0 && GetClientTeam(i) == clientTeam))
 			{
 				continue;
 			}
@@ -934,4 +720,24 @@ stock bool LineGoesThroughSmoke(float from[3], float to[3])
 stock bool IsValidClient(int client)
 {
 	return client > 0 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && !IsClientSourceTV(client);
+}
+
+stock float AngleNormalize(float angle)
+{
+    angle = fmodf(angle, 360.0);
+    if (angle > 180) 
+    {
+        angle -= 360;
+    }
+    if (angle < -180)
+    {
+        angle += 360;
+    }
+    
+    return angle;
+}
+
+stock float fmodf(float number, float denom)
+{
+    return number - RoundToFloor(number / denom) * denom;
 }
